@@ -1,0 +1,19 @@
+# Build artifacts
+GoldPrice.app/
+.build/
+*.o
+*.d
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+
+# Release
+*.zip
+*.dmg
