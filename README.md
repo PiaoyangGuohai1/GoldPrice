@@ -1,7 +1,11 @@
-# GoldPrice 金价监控
+# JDGold
 
 <p align="center">
-  <img src="Resources/AppIcon.iconset/icon_128x128.png" alt="GoldPrice Icon" width="128">
+  <img src="Resources/AppIcon.iconset/icon_128x128.png" alt="JDGold Icon" width="128">
+</p>
+
+<p align="center">
+  <b>Your real-time gold weight on macOS</b>
 </p>
 
 <p align="center">
@@ -25,50 +29,21 @@
 
 ## 截图
 
-### 菜单栏
-```
-┌────────────────────────────────────────┐
-│  ... 其他图标 ...  [金: 1101.59]  ... │
-└────────────────────────────────────────┘
-```
-
-### 下拉菜单
-```
-┌─────────────────────────┐
-│  京东金价监控            │
-│  ───────────────────    │
-│  显示悬浮窗         ⌘F  │
-│  ───────────────────    │
-│  民生银行: 1101.59 元/克 │
-│  工商银行: 1102.30 元/克 │
-│  浙商银行: 1100.85 元/克 │
-│  ───────────────────    │
-│  更新时间: 16:53:48     │
-│  ───────────────────    │
-│  刷新间隔            ▶  │
-│  立即刷新           ⌘R  │
-│  ───────────────────    │
-│  退出               ⌘Q  │
-└─────────────────────────┘
-```
+### 菜单栏下拉菜单
+<p align="center">
+  <img src="Resources/screenshots/menu.png" alt="Menu Screenshot" width="300">
+</p>
 
 ### 悬浮窗
-```
-┌─────────────────────────┐
-│  京东金价               │
-│  ─────────────────────  │
-│  民生    1101.59 元     │
-│  工商    1102.30 元     │
-│  浙商    1100.85 元     │
-│  更新: 16:53:48         │
-└─────────────────────────┘
-```
+<p align="center">
+  <img src="Resources/screenshots/floating.png" alt="Floating Window Screenshot" width="250">
+</p>
 
 ## 安装
 
 ### 方式一：直接下载（推荐）
-1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `GoldPrice-v1.0.0.zip`
-2. 解压后将 `GoldPrice.app` 拖入「应用程序」文件夹
+1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `JDGold-v1.1.0.zip`
+2. 解压后将 `JDGold.app` 拖入「应用程序」文件夹
 3. 首次运行：右键点击 → 打开
 
 ### 方式二：从源码编译
@@ -77,7 +52,7 @@ git clone https://github.com/PiaoyangGuohai1/GoldPrice.git
 cd GoldPrice
 chmod +x build.sh
 ./build.sh
-open GoldPrice.app
+open JDGold.app
 ```
 
 ## 使用说明
@@ -99,19 +74,19 @@ open GoldPrice.app
 
 由于应用未经 Apple 签名，首次运行时 macOS 可能会阻止。请按以下步骤操作：
 
-1. 右键点击 `GoldPrice.app`
+1. 右键点击 `JDGold.app`
 2. 选择「打开」
 3. 在弹出的对话框中点击「打开」
 
 或者在终端执行：
 ```bash
-xattr -cr /Applications/GoldPrice.app
+xattr -cr /Applications/JDGold.app
 ```
 
 ## 开机自启动
 
 1. 打开「系统偏好设置」→「通用」→「登录项」
-2. 点击「+」添加 `GoldPrice.app`
+2. 点击「+」添加 `JDGold.app`
 
 ## 数据来源
 
@@ -134,12 +109,13 @@ xattr -cr /Applications/GoldPrice.app
 ## 项目结构
 
 ```
-GoldPrice/
+JDGold/
 ├── Sources/
 │   └── main.swift      # 全部源代码
 ├── Resources/
 │   ├── AppIcon.icns    # 应用图标
-│   └── AppIcon.iconset # 图标源文件
+│   ├── AppIcon.iconset # 图标源文件
+│   └── screenshots/    # 截图
 ├── Info.plist          # 应用配置
 ├── build.sh            # 构建脚本
 └── README.md

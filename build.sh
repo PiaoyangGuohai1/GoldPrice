@@ -1,31 +1,35 @@
 #!/bin/bash
 
-# GoldPrice Build Script
+# JDGold Build Script
 
 set -e
 
-echo "🔨 Building GoldPrice..."
+echo "🔨 Building JDGold..."
 
 # Create app bundle structure
-mkdir -p GoldPrice.app/Contents/MacOS
-mkdir -p GoldPrice.app/Contents/Resources
+mkdir -p JDGold.app/Contents/MacOS
+mkdir -p JDGold.app/Contents/Resources
 
 # Compile
 swiftc -O \
-    -o GoldPrice.app/Contents/MacOS/GoldPrice \
+    -o JDGold.app/Contents/MacOS/JDGold \
     Sources/main.swift \
     -framework Cocoa \
     2>&1
 
-# Copy Info.plist if not exists
-if [ ! -f "GoldPrice.app/Contents/Info.plist" ]; then
-    cp Info.plist GoldPrice.app/Contents/Info.plist 2>/dev/null || true
-fi
+# Copy Info.plist
+cp Info.plist JDGold.app/Contents/Info.plist
 
-echo "✅ Build complete: GoldPrice.app"
+# Copy icon
+cp Resources/AppIcon.icns JDGold.app/Contents/Resources/AppIcon.icns
+
+# Create PkgInfo
+echo -n "APPL????" > JDGold.app/Contents/PkgInfo
+
+echo "✅ Build complete: JDGold.app"
 echo ""
 echo "To run:"
-echo "  open GoldPrice.app"
+echo "  open JDGold.app"
 echo ""
 echo "To install:"
-echo "  cp -r GoldPrice.app /Applications/"
+echo "  cp -r JDGold.app /Applications/"
