@@ -1,10 +1,19 @@
 # GoldPrice 金价监控
 
-一个极简的 macOS 菜单栏应用，实时监控京东金融黄金价格。
+<p align="center">
+  <img src="Resources/AppIcon.iconset/icon_128x128.png" alt="GoldPrice Icon" width="128">
+</p>
 
-![macOS](https://img.shields.io/badge/macOS-12.0+-blue)
-![Swift](https://img.shields.io/badge/Swift-5.9-orange)
-![License](https://img.shields.io/badge/License-MIT-green)
+<p align="center">
+  一个极简的 macOS 菜单栏应用，实时监控京东金融黄金价格。
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-12.0+-blue" alt="macOS">
+  <img src="https://img.shields.io/badge/Swift-5.9-orange" alt="Swift">
+  <img src="https://img.shields.io/badge/Size-181KB-green" alt="Size">
+  <img src="https://img.shields.io/badge/License-MIT-purple" alt="License">
+</p>
 
 ## 功能特性
 
@@ -16,11 +25,35 @@
 
 ## 截图
 
+### 菜单栏
 ```
-┌─────────────────────────────┐
-│  菜单栏: [金: 1101.59]      │
-└─────────────────────────────┘
+┌────────────────────────────────────────┐
+│  ... 其他图标 ...  [金: 1101.59]  ... │
+└────────────────────────────────────────┘
+```
 
+### 下拉菜单
+```
+┌─────────────────────────┐
+│  京东金价监控            │
+│  ───────────────────    │
+│  显示悬浮窗         ⌘F  │
+│  ───────────────────    │
+│  民生银行: 1101.59 元/克 │
+│  工商银行: 1102.30 元/克 │
+│  浙商银行: 1100.85 元/克 │
+│  ───────────────────    │
+│  更新时间: 16:53:48     │
+│  ───────────────────    │
+│  刷新间隔            ▶  │
+│  立即刷新           ⌘R  │
+│  ───────────────────    │
+│  退出               ⌘Q  │
+└─────────────────────────┘
+```
+
+### 悬浮窗
+```
 ┌─────────────────────────┐
 │  京东金价               │
 │  ─────────────────────  │
@@ -33,14 +66,18 @@
 
 ## 安装
 
-### 方式一：直接下载
-从 [Releases](../../releases) 下载最新的 `GoldPrice.app.zip`，解压后拖入「应用程序」文件夹。
+### 方式一：直接下载（推荐）
+1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `GoldPrice-v1.0.0.zip`
+2. 解压后将 `GoldPrice.app` 拖入「应用程序」文件夹
+3. 首次运行：右键点击 → 打开
 
 ### 方式二：从源码编译
 ```bash
-git clone https://github.com/YOUR_USERNAME/GoldPrice.git
+git clone https://github.com/PiaoyangGuohai1/GoldPrice.git
 cd GoldPrice
+chmod +x build.sh
 ./build.sh
+open GoldPrice.app
 ```
 
 ## 使用说明
@@ -73,22 +110,40 @@ xattr -cr /Applications/GoldPrice.app
 
 ## 开机自启动
 
-1. 打开「系统偏好设置」→「用户与群组」→「登录项」
+1. 打开「系统偏好设置」→「通用」→「登录项」
 2. 点击「+」添加 `GoldPrice.app`
 
 ## 数据来源
 
 金价数据来自京东金融 API：
-- 民生银行金
-- 工商银行金
-- 浙商银行金
+- 民生银行积存金
+- 工商银行积存金
+- 浙商银行积存金
 
 ## 技术栈
 
-- **语言**: Swift 5.9
-- **框架**: AppKit (原生 macOS)
-- **代码量**: ~400 行
-- **依赖**: 无
+| 项目 | 说明 |
+|------|------|
+| 语言 | Swift 5.9 |
+| 框架 | AppKit (原生 macOS) |
+| 代码量 | ~400 行 |
+| 依赖 | 无 |
+| 应用大小 | 368 KB |
+| 下载大小 | 181 KB |
+
+## 项目结构
+
+```
+GoldPrice/
+├── Sources/
+│   └── main.swift      # 全部源代码
+├── Resources/
+│   ├── AppIcon.icns    # 应用图标
+│   └── AppIcon.iconset # 图标源文件
+├── Info.plist          # 应用配置
+├── build.sh            # 构建脚本
+└── README.md
+```
 
 ## 构建要求
 
@@ -98,3 +153,7 @@ xattr -cr /Applications/GoldPrice.app
 ## License
 
 MIT License
+
+## 作者
+
+[@PiaoyangGuohai1](https://github.com/PiaoyangGuohai1)
