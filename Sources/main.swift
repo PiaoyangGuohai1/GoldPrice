@@ -9,6 +9,17 @@ struct GoldPrices {
     var london: String = "--"      // 伦敦金 (美元/盎司)
     var newyork: String = "--"     // 纽约金 (美元/盎司)
     var lastUpdate: Date?
+
+    func price(for key: String) -> String {
+        switch key {
+        case "minsheng": return minsheng
+        case "icbc": return icbc
+        case "zheshang": return zheshang
+        case "london": return london
+        case "newyork": return newyork
+        default: return "--"
+        }
+    }
 }
 
 struct APIResponse: Codable {
@@ -366,6 +377,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var refreshTimer: Timer?
     private var refreshInterval: TimeInterval = 5.0
 
+    // 状态栏显示选项
+    private var statusBarPriceKey: String = "minsheng"
+    private let priceOptions: [(key: String, name: String)] = [
+        ("minsheng", "民生银行"),
+        ("icbc", "工商银行"),
+        ("zheshang", "浙商银行"),
+        ("london", "伦敦金"),
+        ("newyork", "纽约金")
+    ]
+
     // Floating window
     private var floatingWindow: FloatingWindow?
     private var floatingContentView: FloatingContentView?
@@ -380,6 +401,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastUpdateItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 读取保存的状态栏显示选项
+        if let saved = UserDefaults.standard.string(forKey: "statusBarPriceKey") {
+            statusBarPriceKey = saved
+        }
+
         setupStatusItem()
         setupMenu()
         setupFloatingWindow()
@@ -448,6 +474,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        // 状态栏显示选项
+        let statusBarItem = NSMenuItem(title: "状态栏显示", action: nil, keyEquivalent: "")
+        let statusBarSubmenu = NSMenu()
+        for option in priceOptions {
+            let item = NSMenuItem(title: option.name, action: #selector(changeStatusBarPrice(_:)), keyEquivalent: "")
+            item.representedObject = option.key
+            item.target = self
+            if option.key == statusBarPriceKey { item.state = .on }
+            statusBarSubmenu.addItem(item)
+        }
+        statusBarItem.submenu = statusBarSubmenu
+        menu.addItem(statusBarItem)
+
         // Refresh interval
         let intervalItem = NSMenuItem(title: "刷新间隔", action: nil, keyEquivalent: "")
         let intervalSubmenu = NSMenu()
@@ -496,18 +535,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func updateUI() {
-        // Status bar - 显示民生价格和涨跌
+        // Status bar - 只显示价格，不显示涨跌
         if let button = statusItem.button {
-            var title = "金: "
-            if prices.minsheng != "--" {
-                title += prices.minsheng
-                if let price = Double(prices.minsheng) {
-                    title += PriceTracker.shared.formatChange(key: "minsheng", currentPrice: price)
-                }
-            } else {
-                title += "--"
-            }
-            button.title = title
+            let priceStr = prices.price(for: statusBarPriceKey)
+            button.title = "金: \(priceStr)"
         }
 
         // Menu items - 国内
@@ -545,6 +576,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             floatingWindow?.orderFront(nil)
             showFloatingWindowItem.title = "隐藏悬浮窗"
         }
+    }
+
+    @MainActor @objc private func changeStatusBarPrice(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String else { return }
+
+        // 更新选中状态
+        if let submenu = sender.menu {
+            for item in submenu.items { item.state = .off }
+        }
+        sender.state = .on
+
+        // 保存选项
+        statusBarPriceKey = key
+        UserDefaults.standard.set(key, forKey: "statusBarPriceKey")
+
+        // 更新显示
+        updateUI()
     }
 
     @objc private func changeInterval(_ sender: NSMenuItem) {
