@@ -5,27 +5,28 @@
 </p>
 
 <p align="center">
-  <b>Your real-time gold weight on macOS</b>
+  <b>Your real-time gold price monitor on macOS</b>
 </p>
 
 <p align="center">
-  一个极简的 macOS 菜单栏应用，实时监控京东金融黄金价格。
+  一个极简的 macOS 菜单栏应用，实时监控国内外黄金价格。
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-12.0+-blue" alt="macOS">
   <img src="https://img.shields.io/badge/Swift-5.9-orange" alt="Swift">
-  <img src="https://img.shields.io/badge/Size-181KB-green" alt="Size">
   <img src="https://img.shields.io/badge/License-MIT-purple" alt="License">
 </p>
 
 ## 功能特性
 
-- 📊 **菜单栏显示** - 实时在菜单栏显示金价
+- 📊 **菜单栏显示** - 实时在菜单栏显示金价和涨跌幅
 - 🪟 **悬浮窗** - 可拖拽的悬浮窗，始终置顶显示
-- 🏦 **多银行支持** - 民生银行、工商银行、浙商银行
+- 🏦 **国内金价** - 民生银行、工商银行、浙商银行
+- 🌍 **国际金价** - 伦敦金 (XAU)、纽约金 (COMEX)
+- 📈 **涨跌显示** - 实时显示涨跌幅，涨红跌绿
 - ⏱️ **自动刷新** - 支持 3/5/10/30/60 秒刷新间隔
-- 🎨 **极简设计** - 单文件 ~400 行代码，无任何依赖
+- 🎨 **极简设计** - 单文件 ~570 行代码，无任何依赖
 
 ## 截图
 
@@ -42,7 +43,7 @@
 ## 安装
 
 ### 方式一：直接下载（推荐）
-1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `JDGold-v1.1.0.zip`
+1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `JDGold-v1.2.0.zip`
 2. 解压后将 `JDGold.app` 拖入「应用程序」文件夹
 3. 首次运行：右键点击 → 打开
 
@@ -57,8 +58,8 @@ open JDGold.app
 
 ## 使用说明
 
-1. 启动应用后，菜单栏右侧会显示金价
-2. 点击菜单栏图标可查看详细信息
+1. 启动应用后，菜单栏右侧会显示金价和涨跌幅
+2. 点击菜单栏图标可查看国内外金价详情
 3. 选择「显示悬浮窗」(⌘F) 可打开悬浮窗
 4. 悬浮窗可拖拽到任意位置
 
@@ -90,10 +91,14 @@ xattr -cr /Applications/JDGold.app
 
 ## 数据来源
 
-金价数据来自京东金融 API：
+**国内金价** - 京东金融 API：
 - 民生银行积存金
 - 工商银行积存金
 - 浙商银行积存金
+
+**国际金价** - 新浪财经 API：
+- 伦敦金 (XAU) - 现货黄金
+- 纽约金 (GC) - COMEX 期货
 
 ## 技术栈
 
@@ -101,10 +106,8 @@ xattr -cr /Applications/JDGold.app
 |------|------|
 | 语言 | Swift 5.9 |
 | 框架 | AppKit (原生 macOS) |
-| 代码量 | ~400 行 |
+| 代码量 | ~570 行 |
 | 依赖 | 无 |
-| 应用大小 | 368 KB |
-| 下载大小 | 181 KB |
 
 ## 项目结构
 
