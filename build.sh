@@ -2,60 +2,79 @@
 
 # JDGold Build Script
 
-set -e
+set -euo pipefail
 
 echo "🔨 Building JDGold..."
 
-# Create app bundle structure
-mkdir -p JDGold.app/Contents/MacOS
-mkdir -p JDGold.app/Contents/Resources
+APP_BUNDLE="JDGold.app"
+APP_MACOS_DIR="$APP_BUNDLE/Contents/MacOS"
+APP_RESOURCES_DIR="$APP_BUNDLE/Contents/Resources"
 
-# Compile arm64
-echo "  Compiling arm64..."
-swiftc -O \
-    -target arm64-apple-macosx12.0 \
-    -o JDGold.app/Contents/MacOS/JDGold-arm64 \
-    Sources/main.swift \
-    -framework Cocoa \
-    2>&1
+# Start from a clean app bundle so stale files don't leak into releases.
+rm -rf "$APP_BUNDLE"
+mkdir -p "$APP_MACOS_DIR"
+mkdir -p "$APP_RESOURCES_DIR"
 
-# Compile x86_64
-echo "  Compiling x86_64..."
-swiftc -O \
-    -target x86_64-apple-macosx12.0 \
-    -o JDGold.app/Contents/MacOS/JDGold-x86_64 \
-    Sources/main.swift \
-    -framework Cocoa \
-    2>&1
+declare -a built_binaries=()
+declare -a failed_arches=()
 
-# Create Universal Binary
-echo "  Creating Universal Binary..."
-lipo -create \
-    JDGold.app/Contents/MacOS/JDGold-arm64 \
-    JDGold.app/Contents/MacOS/JDGold-x86_64 \
-    -output JDGold.app/Contents/MacOS/JDGold
+compile_arch() {
+    local arch="$1"
+    local target="${arch}-apple-macosx12.0"
+    local output="$APP_MACOS_DIR/JDGold-${arch}"
 
-# Clean up temporary architecture-specific binaries
-rm JDGold.app/Contents/MacOS/JDGold-arm64
-rm JDGold.app/Contents/MacOS/JDGold-x86_64
+    echo "  Compiling ${arch}..."
+    if swiftc -O \
+        -target "$target" \
+        -o "$output" \
+        Sources/main.swift \
+        -framework Cocoa \
+        2>&1; then
+        built_binaries+=("$output")
+    else
+        echo "  Warning: failed to compile ${arch}, continuing..."
+        failed_arches+=("$arch")
+    fi
+}
+
+compile_arch arm64
+compile_arch x86_64
+
+if [ "${#built_binaries[@]}" -eq 0 ]; then
+    echo "❌ Build failed: no architecture could be compiled."
+    exit 1
+fi
+
+if [ "${#built_binaries[@]}" -eq 2 ]; then
+    echo "  Creating Universal Binary..."
+    lipo -create "${built_binaries[@]}" -output "$APP_MACOS_DIR/JDGold"
+    rm -f "$APP_MACOS_DIR/JDGold-arm64" "$APP_MACOS_DIR/JDGold-x86_64"
+else
+    echo "  Creating single-arch binary..."
+    mv "${built_binaries[0]}" "$APP_MACOS_DIR/JDGold"
+fi
 
 # Copy Info.plist
-cp Info.plist JDGold.app/Contents/Info.plist
+cp Info.plist "$APP_BUNDLE/Contents/Info.plist"
 
 # Copy icon
-cp Resources/AppIcon.icns JDGold.app/Contents/Resources/AppIcon.icns
+cp Resources/AppIcon.icns "$APP_RESOURCES_DIR/AppIcon.icns"
 
 # Create PkgInfo
-echo -n "APPL????" > JDGold.app/Contents/PkgInfo
+echo -n "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
 
 # Ad-hoc code signing
 echo "  Signing..."
-codesign --force --deep --sign - JDGold.app
+codesign --force --deep --sign - "$APP_BUNDLE"
 
-echo "✅ Build complete: JDGold.app"
+if [ "${#failed_arches[@]}" -gt 0 ]; then
+    echo "⚠️  Built with partial architectures (failed: ${failed_arches[*]})."
+fi
+
+echo "✅ Build complete: $APP_BUNDLE"
 echo ""
 echo "To run:"
-echo "  open JDGold.app"
+echo "  open $APP_BUNDLE"
 echo ""
 echo "To install:"
-echo "  cp -r JDGold.app /Applications/"
+echo "  cp -r $APP_BUNDLE /Applications/"

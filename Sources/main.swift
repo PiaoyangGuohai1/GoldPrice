@@ -532,7 +532,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Task { await refreshPrices() }
         refreshTimer?.invalidate()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
-            Task { await self?.refreshPrices() }
+            guard let self else { return }
+            Task { await self.refreshPrices() }
         }
     }
 
@@ -624,7 +625,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func performUpdateCheck() async {
-        let currentVersion = "1.4.0"
+        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5.1"
         let repoURL = "https://api.github.com/repos/PiaoyangGuohai1/GoldPrice/releases/latest"
 
         guard let url = URL(string: repoURL) else { return }

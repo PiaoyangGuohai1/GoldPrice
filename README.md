@@ -43,7 +43,7 @@
 ## 安装
 
 ### 方式一：直接下载（推荐）
-1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `JDGold-v1.5.0.zip`
+1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `JDGold-v1.5.1.zip`
 2. 解压后将 `JDGold.app` 拖入「应用程序」文件夹
 3. 首次运行：右键点击 → 打开
 
@@ -55,6 +55,8 @@ chmod +x build.sh
 ./build.sh
 open JDGold.app
 ```
+
+> `build.sh` 默认优先构建 arm64 + x86_64 Universal Binary；如果本机工具链无法交叉编译某一架构，会自动回退为可用的单架构构建。
 
 ## 使用说明
 
