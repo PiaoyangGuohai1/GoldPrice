@@ -43,7 +43,7 @@
 ## 安装
 
 ### 方式一：直接下载（推荐）
-1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `JDGold-v1.4.0.zip`
+1. 从 [Releases](https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest) 下载 `JDGold-v1.5.0.zip`
 2. 解压后将 `JDGold.app` 拖入「应用程序」文件夹
 3. 首次运行：右键点击 → 打开
 
@@ -123,6 +123,11 @@ JDGold/
 ├── build.sh            # 构建脚本
 └── README.md
 ```
+
+## 系统兼容性
+
+- **支持架构**：Apple Silicon (arm64) + Intel (x86_64) Universal Binary
+- **最低系统要求**：macOS 12.0 (Monterey)
 
 ## 构建要求
 
