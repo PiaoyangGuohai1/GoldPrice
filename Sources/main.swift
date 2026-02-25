@@ -625,7 +625,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func performUpdateCheck() async {
-        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5.1"
+        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.6.0"
         let repoURL = "https://api.github.com/repos/PiaoyangGuohai1/GoldPrice/releases/latest"
 
         guard let url = URL(string: repoURL) else { return }
@@ -636,17 +636,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                let tagName = json["tag_name"] as? String {
                 let latestVersion = tagName.replacingOccurrences(of: "v", with: "")
 
+                // 从 assets 中提取 .zip 下载地址
+                var zipDownloadURL: String?
+                if let assets = json["assets"] as? [[String: Any]] {
+                    for asset in assets {
+                        if let name = asset["name"] as? String,
+                           name.hasSuffix(".zip"),
+                           let browserURL = asset["browser_download_url"] as? String {
+                            zipDownloadURL = browserURL
+                            break
+                        }
+                    }
+                }
+
                 if latestVersion.compare(currentVersion, options: .numeric) == .orderedDescending {
                     let alert = NSAlert()
                     alert.messageText = "发现新版本"
-                    alert.informativeText = "当前版本: v\(currentVersion)\n最新版本: v\(latestVersion)\n\n是否前往下载？"
+                    alert.informativeText = "当前版本: v\(currentVersion)\n最新版本: v\(latestVersion)"
                     alert.alertStyle = .informational
-                    alert.addButton(withTitle: "前往下载")
+                    alert.addButton(withTitle: "立即更新")
                     alert.addButton(withTitle: "稍后再说")
 
                     if alert.runModal() == .alertFirstButtonReturn {
-                        if let downloadURL = URL(string: "https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest") {
-                            NSWorkspace.shared.open(downloadURL)
+                        if let urlString = zipDownloadURL, let downloadURL = URL(string: urlString) {
+                            await performAutoUpdate(downloadURL: downloadURL, latestVersion: latestVersion)
+                        } else {
+                            // 没有找到 ZIP 资源，回退到打开浏览器
+                            if let fallbackURL = URL(string: "https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest") {
+                                NSWorkspace.shared.open(fallbackURL)
+                            }
                         }
                     }
                 } else {
@@ -668,8 +686,221 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @MainActor
+    private func performAutoUpdate(downloadURL: URL, latestVersion: String) async {
+        // 1. 显示下载进度窗口
+        let progressAlert = NSAlert()
+        progressAlert.messageText = "正在更新..."
+        progressAlert.informativeText = "正在下载 v\(latestVersion)，请稍候..."
+        progressAlert.alertStyle = .informational
+        progressAlert.addButton(withTitle: "取消")
+
+        let progressIndicator = NSProgressIndicator(frame: NSRect(x: 0, y: 0, width: 250, height: 20))
+        progressIndicator.style = .bar
+        progressIndicator.isIndeterminate = false
+        progressIndicator.minValue = 0
+        progressIndicator.maxValue = 100
+        progressIndicator.doubleValue = 0
+        progressAlert.accessoryView = progressIndicator
+
+        // 在后台窗口显示进度
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 350, height: 120),
+                              styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        window.title = "正在更新 JDGold"
+        window.center()
+
+        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: 350, height: 120))
+
+        let statusLabel = NSTextField(labelWithString: "正在下载 v\(latestVersion)...")
+        statusLabel.frame = NSRect(x: 20, y: 70, width: 310, height: 20)
+        statusLabel.font = NSFont.systemFont(ofSize: 13)
+        containerView.addSubview(statusLabel)
+
+        let progressBar = NSProgressIndicator(frame: NSRect(x: 20, y: 45, width: 310, height: 20))
+        progressBar.style = .bar
+        progressBar.isIndeterminate = false
+        progressBar.minValue = 0
+        progressBar.maxValue = 100
+        progressBar.doubleValue = 0
+        containerView.addSubview(progressBar)
+
+        let detailLabel = NSTextField(labelWithString: "")
+        detailLabel.frame = NSRect(x: 20, y: 20, width: 310, height: 16)
+        detailLabel.font = NSFont.systemFont(ofSize: 11)
+        detailLabel.textColor = .secondaryLabelColor
+        containerView.addSubview(detailLabel)
+
+        window.contentView = containerView
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("JDGold_update_\(UUID().uuidString)")
+
+        do {
+            // 创建临时目录
+            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+            // 2. 下载 ZIP
+            let zipPath = tempDir.appendingPathComponent("JDGold.zip")
+
+            let delegate = DownloadDelegate()
+            let downloadSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+
+            // 用 observation 更新进度
+            delegate.onProgress = { progress in
+                DispatchQueue.main.async {
+                    progressBar.doubleValue = progress * 100
+                    detailLabel.stringValue = String(format: "已下载 %.0f%%", progress * 100)
+                }
+            }
+
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                let task = downloadSession.downloadTask(with: downloadURL) { localURL, response, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                        return
+                    }
+                    guard let localURL = localURL else {
+                        continuation.resume(throwing: NSError(domain: "JDGold", code: -1, userInfo: [NSLocalizedDescriptionKey: "下载文件为空"]))
+                        return
+                    }
+                    do {
+                        try FileManager.default.moveItem(at: localURL, to: zipPath)
+                        continuation.resume()
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+                task.resume()
+            }
+
+            // 3. 解压 ZIP
+            DispatchQueue.main.async {
+                statusLabel.stringValue = "正在解压..."
+                progressBar.isIndeterminate = true
+                progressBar.startAnimation(nil)
+                detailLabel.stringValue = ""
+            }
+
+            let unzipDir = tempDir.appendingPathComponent("extracted")
+            try FileManager.default.createDirectory(at: unzipDir, withIntermediateDirectories: true)
+
+            let unzipProcess = Process()
+            unzipProcess.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+            unzipProcess.arguments = ["-o", zipPath.path, "-d", unzipDir.path]
+            unzipProcess.standardOutput = FileHandle.nullDevice
+            unzipProcess.standardError = FileHandle.nullDevice
+            try unzipProcess.run()
+            unzipProcess.waitUntilExit()
+
+            guard unzipProcess.terminationStatus == 0 else {
+                throw NSError(domain: "JDGold", code: -2, userInfo: [NSLocalizedDescriptionKey: "解压失败 (exit code: \(unzipProcess.terminationStatus))"])
+            }
+
+            // 4. 定位 .app
+            DispatchQueue.main.async {
+                statusLabel.stringValue = "正在安装更新..."
+            }
+
+            let appName = "JDGold.app"
+            guard let appPath = findApp(named: appName, in: unzipDir) else {
+                throw NSError(domain: "JDGold", code: -3, userInfo: [NSLocalizedDescriptionKey: "在下载包中未找到 \(appName)"])
+            }
+
+            // 5. 替换当前应用
+            let currentAppPath = Bundle.main.bundlePath
+            let currentAppURL = URL(fileURLWithPath: currentAppPath)
+            let backupURL = tempDir.appendingPathComponent("JDGold_backup.app")
+
+            // 备份旧版本
+            try FileManager.default.moveItem(at: currentAppURL, to: backupURL)
+
+            do {
+                // 移动新版本到原位置
+                try FileManager.default.moveItem(at: appPath, to: currentAppURL)
+            } catch {
+                // 替换失败，恢复备份
+                try? FileManager.default.moveItem(at: backupURL, to: currentAppURL)
+                throw NSError(domain: "JDGold", code: -4, userInfo: [NSLocalizedDescriptionKey: "替换应用失败: \(error.localizedDescription)\n已恢复旧版本。"])
+            }
+
+            // 6. 重启应用
+            DispatchQueue.main.async {
+                statusLabel.stringValue = "更新完成，正在重启..."
+            }
+
+            // 短暂延迟让用户看到状态
+            try await Task.sleep(nanoseconds: 500_000_000)
+
+            let script = """
+            sleep 1
+            open "\(currentAppPath)"
+            """
+            let restartProcess = Process()
+            restartProcess.executableURL = URL(fileURLWithPath: "/bin/sh")
+            restartProcess.arguments = ["-c", script]
+            try restartProcess.run()
+
+            // 清理临时文件（留一小段时间）
+            DispatchQueue.global().asyncAfter(deadline: .now() + 2) {
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+
+            NSApplication.shared.terminate(nil)
+
+        } catch {
+            // 错误处理
+            window.orderOut(nil)
+
+            // 清理临时目录
+            try? FileManager.default.removeItem(at: tempDir)
+
+            let errorAlert = NSAlert()
+            errorAlert.messageText = "更新失败"
+            errorAlert.informativeText = "\(error.localizedDescription)\n\n是否前往手动下载？"
+            errorAlert.alertStyle = .critical
+            errorAlert.addButton(withTitle: "前往下载")
+            errorAlert.addButton(withTitle: "取消")
+
+            if errorAlert.runModal() == .alertFirstButtonReturn {
+                if let fallbackURL = URL(string: "https://github.com/PiaoyangGuohai1/GoldPrice/releases/latest") {
+                    NSWorkspace.shared.open(fallbackURL)
+                }
+            }
+        }
+    }
+
+    /// 递归查找 .app bundle
+    private func findApp(named name: String, in directory: URL) -> URL? {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(at: directory, includingPropertiesForKeys: nil) else { return nil }
+        for case let fileURL as URL in enumerator {
+            if fileURL.lastPathComponent == name {
+                return fileURL
+            }
+        }
+        return nil
+    }
+
     @objc private func quit() {
         NSApplication.shared.terminate(nil)
+    }
+}
+
+// MARK: - Download Delegate
+class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+    var onProgress: ((Double) -> Void)?
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        // Handled by completion handler in downloadTask
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        if totalBytesExpectedToWrite > 0 {
+            let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+            onProgress?(progress)
+        }
     }
 }
 
